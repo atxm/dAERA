@@ -261,7 +261,6 @@ class Biologist {
 }
 
 
-Lab --|> Environment
 Hallway--|>Environment
 class Environment {
     -roomName : string
@@ -330,7 +329,6 @@ class Page {
 }
 Page --* Journal
 
-playerActions..>PlayerCharacter
 battleActions..>PlayerCharacter
 Basar --* PlayerCharacter
 Soldier--|>PlayerCharacter
@@ -518,20 +516,18 @@ The `PlayerCharacter` class includes the mention of an `Inventory` class which k
 
 The `Inventory` class also includes members of the `Item` class which includes `assistance` (i.e., the number of damage added or health gained) and the name of the `Item`. This class also includes the pure virtual function that prints the item, grabs the assistance amount, and uses the item. Its derived classes include the `Weapon` and `HelpItem` classes which have the implementation of the functions `printItem()` and `useItem()` and `damage()` member functions respectively.
 
-The `PlayerCharacter` class also makes use of the `Basar` class, the latter being compositionally related to the former in that the user will have access to this particular object that serves as both a fictional AI assistant with hard-coded dialogue options and responses (dependent on the `playerAffinity` which is, in turn, dependent on the dialogue options the user chooses) and as the accessor for the player’s journal, as implemented in the `Journal` class.
+The `Basar` class acts as a sort of menu for the player, allowing them to collect pages in their journal as they progress through their game, which expands upon our vast lore. It also provides the player a means to leave the game.
 
-The `Journal` class is made of a vector of `Page` objects, the latter class also being compositionally related due to its only implementation as a member variable for the former. `Journal` also possesses a `printPage(int)` function that will make use of the `printPage()` function in the `Page` class.
+The `Journal` class is made of a vector of `Page` objects, the latter class also being compositionally related due to its only implementation as a member variable for the former. `Journal` also possesses an `outputPage(unsigned)` function that will make use of the `output()` function in the `Page` class.
 
-As a friend to the `PlayerCharacter` class, the `battleActions` class controls any of the combat actions the player can take like doing damage, defending, or using an item.
+As a friend to the `PlayerCharacter` class, the `battleActions` class controls any combat actions the player can take like doing damage, defending, or using an item.
 
-Similarly, the `playerActions` class is another friend of the `PlayerCharacter` class that allows the user to move around (left, right, back, or forward), heal, or make use of Basar (i.e., access the journal and/or speak with the AI assistant itself).
-
-The `NPC` class includes all the NPC-specific list of responses, NPC name, and list of questions the NPC will answer. This class has functions that allow one to print the NPC's name and response as well as add new questions and responses for the NPC to answer to or ask.
+The `NPC` class includes all the NPC-specific list of responses, NPC name, and list of questions the NPC will answer. This class has functions that allow one to print the NPC's name and response as well as add new questions and responses for the NPC to answer or ask. 
 
 Finally is the `Enemy` class derived from the `Entity` class that contains the subclasses of our common enemies of `Rat`, `Terrorist`, `Crewmate`, and `Alien` classes. All of these classes include a `health`, `attack`, `accuracy`, and `evasion` stat on top of a `dealDamage()`, `takeDamage(int)`, and `printStatus()` function. In this class, the `printStatus()` function just prints the enemy’s current health. As for the `dealDamage()` and `takeDamage(int)` functions, these deal with how much damage the enemy does and how much damage the enemy takes respectively.
-The `Environment` is an abstract class that handles the locations that the player will move through during the game. It contains a description `string`, vector of `Item` objects, and methods to list and take items from the `Environment`. Classes like `Hallway`, `Lab`, and others will inherit from `Environment` and implement methods specific to those rooms.
+The `Environment` is an abstract class that handles the locations that the player will move through during the game. It contains a `description` string and a `name` string. Classes like `Hallway`, and `Room` will inherit from `Environment` and implement methods specific to those rooms such as `getItemFromRoom()`, `getPageFromRoom()`, and `getItemFromRoom`.
 
-The `Map` class contains all the `Environment`-child classes and arranges them into a map that the player will move through. The `Map` class contains a vector of `Environment` objects and an adjacency matrix that handles the connections between the rooms. The methods include `canMove()` which deduces whether the player made a valid movement command, a `connectTo()` method that creates connections or "doors" between rooms, and `getLocation()` which returns the room the player is currently in.  
+The `Map` class contains all the `Environment`-child classes and arranges them into a map that the player will move through. The `Map` class contains a vector of `Environment` objects and an adjacency matrix that handles the connections between the rooms. The methods include `canMove()` which deduces whether the player made a valid movement command, a `connectTo()` method that creates connections or "doors" between rooms, and `getRoom()` which returns the room the player is currently in.  
 
 # SOLID Principles added
 
@@ -547,28 +543,25 @@ Within my inventory class, I implemented SRP and ISP. Originally, I had one sing
 
 </br>
 
-I also have an item class in which I implemented ISP, and LSP.  I have an abstract item class, with a derived helpItem class and Weapon class. helpItem has an assistance private member that would basically do something to the player character, which the weapon doesn’t have, so I used an interface and inherited that into my helpItem class so that I don’t have weapon with a getAssistance function that doesn’t do anything. Also, I made sure that my derived classes have the same functionality when replacing any instances of item in the code, such as in the inventory class. It also kind of follows SRP, I didn’t see the need to split the Item class up into multiple classes, cause I thought the methods all referred to the functionality of the items. These changes helped me write better code by making it cleaner and more maintainable, and makes sure that expected behavior is preserved across any subclass instances. 
+~~I also have an item class in which I implemented ISP, and LSP.  I have an abstract item class, with a derived helpItem class and Weapon class. helpItem has an assistance private member that would basically do something to the player character, which the weapon doesn’t have, so I used an interface and inherited that into my helpItem class so that I don’t have weapon with a getAssistance function that doesn’t do anything. Also, I made sure that my derived classes have the same functionality when replacing any instances of item in the code, such as in the inventory class. It also kind of follows SRP, I didn’t see the need to split the Item class up into multiple classes, cause I thought the methods all referred to the functionality of the items. These changes helped me write better code by making it cleaner and more maintainable, and makes sure that expected behavior is preserved across any subclass instances.~~
+
+After some thought, I realized that my efforts in implementing ISP had actually violated the LSP. I was unable to use the parent class Item due to HelpItem having methods that Item did not recognize. I worked around this by creating much more generic virtual methods in my Item abstract class, and implementing them both into my HelpItem and Weapon child classes. I still do believe that it also follows SRP, in my opinion the methods refer to the functionality of the item. 
 
 </br>
 
 I implemented SRP and ISP to my NPC class.  Like the inventory class, I originally had a single NPC class, and that got split up into NPCPrinter and NPCQuestionManager, both inheriting from a NPCPrint interface and NPCInteraction interface. NPCPrinter controls the output functions related to the NPC, and NPCQuestionManager controls the questions and response logic from our npcs. Like the inventory class, this made my NPC class a lot more scalable and flexible; If I make changes to one class, I can be confident that the other class won’t be messed with, and I’d be able to track errors a lot easier. The interfaces also made sure that each class only has things related to its role.
 
 </br>
-Lastly, I made changes to my Enemy Class, implementing SRP ISP and LSP. I separated my one Enemy class into three classes, EnemyBattle and EnemyStatus, EnemyBattle deals with chance events in combat and EnemyStatus deals with updating the stats of the enemy. I have three implemented interfaces, IEnemyState, IEnemyCombatChance, and IEnemyDamage. IEnemyState is used by EnemyStatus, IEnemyCombatChance is used by EnemyBattle, and IEnemyDamage is used directly by the subclasses that represent the actual enemies to fight. For LSP, all my different enemies that inherit from the Enemy class serve the same functionality and are interchangeable with any instances of an Enemy object within the code. The benefits that these changes are the added scalability and flexibility of course. If I plan on adding any more enemies in the future, these principles streamline that process and make sure each new class will follow the same fundamental interface.
+Lastly, I made changes to my Enemy Class, implementing SRP ISP and LSP. I separated my Enemy class into three classes, EnemyBattle and EnemyStatus, EnemyBattle deals with chance events in combat and EnemyStatus deals with updating the stats of the enemy. I have three implemented interfaces, IEnemyState, IEnemyCombatChance, and IEnemyDamagePrompts. IEnemyState and IEnemyDamagePrompts are used by EnemyStatus, and IEnemyCombatChance is used by EnemyBattle. For LSP, all my different enemies that inherit from the Enemy class serve the same functionality and are interchangeable with any instances of an Enemy object within the code. The benefits that these changes are the added scalability and flexibility of course. If I plan on adding any more enemies in the future, these principles streamline that process and make sure each new class will follow the same fundamental interface.
 </br>
 </br>
 {Mario}
 </br>
-To anticipate more types of rooms being added as we develop our story, I decided to change the Environment class to an abstract class. Originally my plan was to have a single "room" class that would simply change its description and functions depending on whether or not it was a lab or an escape pod etc. The player would need different options and items to interact with depending on the room they were in. But as I learned about the SOLID principles, particularly the Open-closed principle, I decided to make Environment an abstract class that would never need to be changed as more room types were added. Specifically, the methods inside Environment (like description, addItem, etc) apply to all future room types and won't need to be changed. And any number of new room types could be added without issue.
+To anticipate more types of rooms being added as we develop our story, I decided to change the Environment class to an abstract class. Originally my plan was to have a single "room" class that would simply change its description and functions depending on whether or not it was a lab or an escape pod etc. The player would need different options and items to interact with depending on the room they were in. But as I learned about the SOLID principles, particularly the Open-closed principle, I decided to make Environment an abstract class that would never need to be changed as more room types were added. Specifically, the methods inside Environment (like displayDescription, displayName, etc) apply to all future room types and won't need to be changed. And any number of new room types could be added without issue.
 
 
 
  > ## Final deliverable
- > All group members will give a demo to the reader during lab time. ou should schedule your demo on Calendly with the same reader who took your second scrum meeting. The reader will check the demo and the project GitHub repository and ask a few questions to all the team members. 
- > Before the demo, you should do the following:
- > * Complete the sections below (i.e. Screenshots, Installation/Usage, Testing)
- > * Plan one more sprint (that you will not necessarily complete before the end of the quarter). Your In-progress and In-testing columns should be empty (you are not doing more work currently) but your TODO column should have a full sprint plan in it as you have done before. This should include any known bugs (there should be some) or new features you would like to add. These should appear as issues/cards on your Project board.
- > * Make sure your README file and Project board are up-to-date reflecting the current status of your project (e.g. any changes that you have made during the project such as changes to your class diagram). Previous versions should still be visible through your commit history. 
  
  ## Screenshots
  <i>Numbers correlate to row number on the table on top of the readme file.<i></br></br>
@@ -623,10 +616,19 @@ To anticipate more types of rooms being added as we develop our story, I decided
  
  ## Installation/Usage
 Steps to run dÆRA
+- Make sure you have cmake installed on your local machine
+ - `brew install cmake` if you have homebrew installed on your Macintosh device, or by downloading the latest version on [this link](http://www.cmake.org/download/).	 
 - Clone the online repository onto your local machine.
 - First, type ```$ cmake .``` into your terminal.
 - Next, type ```$ make``` into your terminal.
 - Finally, type ```$ ./dAEra``` into your terminal.
-- Enjoy your gaming experience!  
+- Enjoy your gaming experience!
+</br> For an easier experience, we've attached the layout of our map so you can have an easier time navigating in-game.
+![Picture of the game map](https://github.com/cs100/final-project-jlee1667-yadam003-shilt003-mmira069/blob/master/img/gamemap.png) </br>
+
  ## Testing
 All modules of our project were unit-tested using Google's Googletest submodules. In approaching this project, our group opted for a top-down testing approach, creating our large modules first and developing stubs for our smaller modules, and slowly worked our way down and ensured that our stubs and low-level modules gave the same result in our unit tests. After finishing a lower module, we immediately integrated the related classes and ensured that our test results were the same between the stubs and actual implementation.
+
+We also used valgrind to check for any errors or memory leaks. While we got zero errors, we did have issues with memory leaks. This was a bit puzzling at first because no one in our group had ever dynamically allocated any memory, as we used the stack for the entire project. However, after looking at the debugging messages, we realized that the errors were coming from the hash maps that we used to allow for map navigation and permissions in our game. We have 25 hashmaps for our rooms, and those hashmaps also have up to four hashmaps inside those hash maps, so it's obvious to see why we have a lot of still reachable memory in our heap. But other than that, no memory leaks are coming from our actual code and individual modules. <br>
+
+![Picture of Valgrind](https://github.com/cs100/final-project-jlee1667-yadam003-shilt003-mmira069/blob/master/img/Valgrind.png) </br>
